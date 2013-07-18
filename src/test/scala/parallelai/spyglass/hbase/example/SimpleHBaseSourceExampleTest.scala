@@ -42,14 +42,13 @@ class SimpleHBaseSourceExampleTest extends FunSpec with TupleConversions {
       List("column_family"),
       List(new Fields("column_name1", "column_name2")),
       sourceMode = SourceMode.GET_LIST, keyList = List("1", "2", "3")),
-    sampleData.map(l => new Tuple(l.map(s => {new ImmutableBytesWritable(Bytes.toBytes(s))}):_*)))
-    .sink[Tuple](Tsv(output format "get_list")) {
-      outputBuffer =>
-        log.debug("Output => " + outputBuffer)
+      sampleData.map(l => new Tuple(l.map(s => {new ImmutableBytesWritable(Bytes.toBytes(s))}):_*)))
+    .sink[Tuple](Tsv(output format "get_list")) { outputBuffer =>
+      log.debug("Output => " + outputBuffer)
 
-        it("should return the test data provided.") {
-          assert(outputBuffer.size === 3)
-        }
+      it("should return the test data provided.") {
+        assert(outputBuffer.size === 3)
+      }
     }
     .run
     .finish

@@ -12,8 +12,6 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.InputSplit;
 
-import com.sun.tools.javac.resources.version;
-
 import parallelai.spyglass.hbase.HBaseConstants.SourceMode;
 
 public class HBaseTableSplit implements InputSplit, Comparable<HBaseTableSplit>, Serializable {

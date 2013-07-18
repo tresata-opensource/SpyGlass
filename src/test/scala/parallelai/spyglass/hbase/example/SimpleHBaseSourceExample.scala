@@ -1,7 +1,6 @@
 package parallelai.spyglass.hbase.example
 
-import com.twitter.scalding.{Tsv, Args}
-import parallelai.spyglass.base.JobBase
+import com.twitter.scalding.{Tsv, Args, Job}
 import org.apache.log4j.{Level, Logger}
 import parallelai.spyglass.hbase.{HBasePipeConversions, HBaseSource}
 import parallelai.spyglass.hbase.HBaseConstants.SourceMode
@@ -10,7 +9,7 @@ import cascading.tuple.Fields
 /**
   * Simple example of HBaseSource usage
   */
-class SimpleHBaseSourceExample(args: Args) extends JobBase(args) with HBasePipeConversions {
+class SimpleHBaseSourceExample(args: Args) extends Job(args) with HBasePipeConversions {
 
    val isDebug: Boolean = args("debug").toBoolean
 
