@@ -21,7 +21,8 @@ object SpyglassBuild extends Build {
         "org.scalatest" %% "scalatest" % "1.8" % "test",
         "org.apache.hbase" % "hbase" % "0.94.6" % "test" classifier "tests",
         "com.google.guava" % "guava" % "13.0" % "test"
-      )
+      ),
+      cleanFiles <+= baseDirectory { base => base / "tmp" }
     )
   )
 

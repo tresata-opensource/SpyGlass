@@ -13,10 +13,15 @@ import org.apache.hadoop.hbase.{ HBaseConfiguration, MiniHBaseCluster, HTableDes
 import org.apache.hadoop.hbase.client.{ HBaseAdmin, HTable, Scan, Delete, Result }
 import org.scalatest.{ FunSpec, BeforeAndAfterAll }
 
-class TestJob1(args: Args) extends Job(args) {
+class LoadJob(args: Args) extends Job(args) {
   Csv("file://" + SpyGlassSpec.getLocalPath("test/candidates.txt").toString, separator = "|", skipHeader = true, quote = null)
     .then((pipe: Pipe) => new HBasePipeWrapper(pipe).toBytesWritable(('first, 'last, 'party, 'rating)))
-    .write(new HBaseSource("test", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating")))
+    .write(HBaseSource("load", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating")))
+}
+
+class CopyJob(args: Args) extends Job(args) {
+  HBaseSource("load", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating"))
+    .write(HBaseSource("copy", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating")))
 }
 
 object SpyGlassSpec {
@@ -52,16 +57,20 @@ class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
   val zkCluster = new MiniZooKeeperCluster
   conf.set("hbase.zookeeper.property.clientPort", zkCluster.startup(tmpDir).toString)
   val hbaseCluster = new MiniHBaseCluster(conf, 1)
-  val htable = createTable(conf, "test", "cf")
 
   describe("An HBaseSource") {
-    it("should be able to participate in a flow as a source or sink") {
-      truncTable(htable)
-      ToolRunner.run(conf, new Tool, Array("parallelai.spyglass.hbase.TestJob1", "--hdfs"))
-        assert(toMaps(htable.getScanner(Bytes.toBytes("cf")).next(1000), "cf") == Map(
+    it("should be able to participate in a flow as a sink and source") {
+      val loadTable = createTable(conf, "load", "cf")
+      val copyTable = createTable(conf, "copy", "cf")
+      val checkMap = Map(
           "joe" -> Map("last" -> "biden", "party" -> "democrats", "rating" -> "5"),
-          "paul" -> Map("last" -> "ryan", "party" -> "", "rating" -> "3")
-        ))
+          "paul" -> Map("last" -> "ryan", "party" -> "", "rating" -> "3"))
+      truncTable(loadTable)
+      truncTable(copyTable)
+      ToolRunner.run(conf, new Tool, Array("parallelai.spyglass.hbase.LoadJob", "--hdfs"))
+      ToolRunner.run(conf, new Tool, Array("parallelai.spyglass.hbase.CopyJob", "--hdfs"))
+      assert(toMaps(loadTable.getScanner(Bytes.toBytes("cf")).next(1000), "cf") == checkMap)
+      assert(toMaps(copyTable.getScanner(Bytes.toBytes("cf")).next(1000), "cf") == checkMap)
     }
   }
 
