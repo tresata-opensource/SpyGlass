@@ -1,4 +1,3 @@
 first|last|party|rating
 joe|biden|democrats|5
-barack|obama|democrats|4
 paul|ryan||3
