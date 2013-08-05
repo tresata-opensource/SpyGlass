@@ -19,8 +19,8 @@ object SpyglassBuild extends Build {
         "org.slf4j" % "slf4j-log4j12" % "1.6.6" % "provided",
         "com.novocode" % "junit-interface" % "0.8" % "test",
         "org.scalatest" %% "scalatest" % "1.8" % "test",
-        "org.apache.hadoop" % "hadoop-test" % "1.0.4" % "test",
-        "org.apache.hbase" % "hbase" % "0.94.6" % "test" classifier "tests"
+        "org.apache.hbase" % "hbase" % "0.94.6" % "test" classifier "tests",
+        "com.google.guava" % "guava" % "13.0" % "test"
       )
     )
   )

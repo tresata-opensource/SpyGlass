@@ -1,5 +1,4 @@
-first|last|party|rating|score
-joe|biden|democrats|0.5|2
-barack|obama|democrats|0.4|3
-paul|ryan||0.3|4
-mitt|romney|republicans|0.6|1
+first|last|party|rating
+joe|biden|democrats|5
+barack|obama|democrats|4
+paul|ryan||3
