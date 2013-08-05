@@ -16,12 +16,13 @@ import org.scalatest.{ FunSpec, BeforeAndAfterAll }
 class LoadJob(args: Args) extends Job(args) {
   Csv("file://" + SpyGlassSpec.getLocalPath("test/candidates.txt").toString, separator = "|", skipHeader = true, quote = null)
     .then((pipe: Pipe) => new HBasePipeWrapper(pipe).toBytesWritable(('first, 'last, 'party, 'rating)))
-    .write(HBaseSource("load", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating")))
+    .write(HBaseSource("test", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating")))
 }
 
-class CopyJob(args: Args) extends Job(args) {
-  HBaseSource("load", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating"))
-    .write(HBaseSource("copy", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating")))
+class ExtractJob(args: Args) extends Job(args) {
+  HBaseSource("test", "localhost:2181", ('first), List("cf", "cf", "cf"), List("last", "party", "rating"))
+    .then((pipe: Pipe) => new HBasePipeWrapper(pipe).fromBytesWritable(('first, 'last, 'party, 'rating)))
+    .write(Csv("file://" + SpyGlassSpec.getLocalPath("tmp/candidates").toString, separator = "|", skipHeader = true, quote = null))
 }
 
 object SpyGlassSpec {
@@ -57,20 +58,17 @@ class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
   val zkCluster = new MiniZooKeeperCluster
   conf.set("hbase.zookeeper.property.clientPort", zkCluster.startup(tmpDir).toString)
   val hbaseCluster = new MiniHBaseCluster(conf, 1)
+  val table = createTable(conf, "test", "cf")
 
   describe("An HBaseSource") {
     it("should be able to participate in a flow as a sink and source") {
-      val loadTable = createTable(conf, "load", "cf")
-      val copyTable = createTable(conf, "copy", "cf")
       val checkMap = Map(
-          "joe" -> Map("last" -> "biden", "party" -> "democrats", "rating" -> "5"),
-          "paul" -> Map("last" -> "ryan", "party" -> "", "rating" -> "3"))
-      truncTable(loadTable)
-      truncTable(copyTable)
+        "joe" -> Map("last" -> "biden", "party" -> "democrats", "rating" -> "5"),
+        "paul" -> Map("last" -> "ryan", "rating" -> "3"))
+      truncTable(table)
       ToolRunner.run(conf, new Tool, Array("parallelai.spyglass.hbase.LoadJob", "--hdfs"))
-      ToolRunner.run(conf, new Tool, Array("parallelai.spyglass.hbase.CopyJob", "--hdfs"))
-      assert(toMaps(loadTable.getScanner(Bytes.toBytes("cf")).next(1000), "cf") == checkMap)
-      assert(toMaps(copyTable.getScanner(Bytes.toBytes("cf")).next(1000), "cf") == checkMap)
+      ToolRunner.run(conf, new Tool, Array("parallelai.spyglass.hbase.ExtractJob", "--hdfs"))
+      assert(toMaps(table.getScanner(Bytes.toBytes("cf")).next(1000), "cf") == checkMap)
     }
   }
 
