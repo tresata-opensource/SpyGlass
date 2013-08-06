@@ -624,11 +624,11 @@ public class HBaseInputFormat implements
 	}
 
 	public static void setTableName(JobConf job, String tableName) {
-		// Make sure that table has not been set before
+		// Make sure that table has not been set before with a different value
 		String oldTableName = getTableName(job);
-		if (oldTableName != null) {
-			throw new RuntimeException("table name already set to: '"
-					+ oldTableName + "'");
+		if (oldTableName != null && !oldTableName.equals(tableName)) {
+                    throw new RuntimeException("table name already set to: '"
+                                               + oldTableName + "'");
 		}
 
 		job.set(INPUT_TABLE, tableName);

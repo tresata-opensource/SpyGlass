@@ -4,7 +4,7 @@ import java.io.IOException
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.util.Bytes
 import com.twitter.scalding.AccessMode
-import com.twitter.scalding.Hdfs
+import com.twitter.scalding.{ HadoopMode, HadoopTest }
 import com.twitter.scalding.Mode
 import com.twitter.scalding.Read
 import com.twitter.scalding.Source
@@ -55,7 +55,7 @@ case class HBaseSource(
       case _ => throw new ClassCastException("Failed casting from Scheme to HBaseScheme")
     } 
     mode match { 
-      case hdfsMode @ Hdfs(_, _) => readOrWrite match {
+      case hdfsMode: HadoopMode => readOrWrite match {
         case Read => { 
           val hbt = new HBaseTap(quorumNames, tableName, hBaseScheme, SinkMode.KEEP)
            
@@ -82,7 +82,9 @@ case class HBaseSource(
           val hbt = new HBaseTap(quorumNames, tableName, hBaseScheme, SinkMode.UPDATE)
           
           hbt.setUseSaltInSink(useSalt)
-          
+          if (mode.isInstanceOf[HadoopTest]) // hack to make JobTest work
+            hbt.setHBaseScanAllParms(useSalt, prefixList)
+
           hbt.asInstanceOf[Tap[_,_,_]]
         }
       }

@@ -13,6 +13,7 @@ object SpyglassBuild extends Build {
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
       libraryDependencies ++= Seq(
+        "com.twitter" %% "scalding-core" % "0.8.7-tres-SNAPSHOT" % "compile",
         "com.twitter" %% "scalding-core" % "0.8.6" % "compile",
         "org.apache.hadoop" % "hadoop-core" % "1.0.4" % "provided",
         "org.apache.hbase" % "hbase" % "0.94.6" % "provided",
@@ -22,7 +23,11 @@ object SpyglassBuild extends Build {
         "org.apache.hbase" % "hbase" % "0.94.6" % "test" classifier "tests",
         "com.google.guava" % "guava" % "13.0" % "test"
       ),
-      cleanFiles <+= baseDirectory { base => base / "tmp" }
+      resolvers ++= Seq( // necessary since scalding is not pusblished yet
+        "releases" at "http://server01:8080/archiva/repository/internal",
+        "snapshots"  at "http://server01:8080/archiva/repository/snapshots",
+        "proxy"  at "http://oss.sonatype.org/content/repositories/proxy"
+      )
     )
   )
 
