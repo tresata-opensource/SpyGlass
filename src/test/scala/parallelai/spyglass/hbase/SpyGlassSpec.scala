@@ -64,7 +64,13 @@ object SpyGlassSpec {
 class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
   import SpyGlassSpec._
   import com.twitter.scalding.Dsl._
-
+  
+  // cant get these loggers to shut up!
+  org.apache.log4j.Logger.getRootLogger.getAllAppenders.asScala.foreach(app => app match {
+    case appsk: org.apache.log4j.AppenderSkeleton => appsk.setThreshold(org.apache.log4j.Level.INFO)
+    case _ => Unit
+  })
+  
   val conf = new HBaseConfiguration
   val tmpDir = Files.createTempDir
   val zkCluster = new MiniZooKeeperCluster
