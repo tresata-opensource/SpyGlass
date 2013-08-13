@@ -1,0 +1,3 @@
+first|last|party|rating
+joe|biden|democrats|5
+paul|ryan||3

@@ -1,0 +1,3 @@
+umask 022
+sbt
+test-only parallelai.spyglass.hbase.SpyGlassSpec -- -Dlog4j.configuration=log4j-test.properties

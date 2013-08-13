@@ -18,7 +18,14 @@ object SpyglassBuild extends Build {
         "org.apache.hbase" % "hbase" % "0.94.6" % "provided",
         "org.slf4j" % "slf4j-log4j12" % "1.6.6" % "provided",
         "com.novocode" % "junit-interface" % "0.8" % "test",
-        "org.scalatest" %% "scalatest" % "1.8" % "test"
+        "org.scalatest" %% "scalatest" % "1.8" % "test",
+        "org.apache.hbase" % "hbase" % "0.94.6" % "test" classifier "tests",
+        "com.google.guava" % "guava" % "13.0" % "test"
+      ),
+      resolvers ++= Seq( // necessary since scalding is not pusblished yet
+        "releases" at "http://server01:8080/archiva/repository/internal",
+        "snapshots"  at "http://server01:8080/archiva/repository/snapshots",
+        "proxy"  at "http://oss.sonatype.org/content/repositories/proxy"
       ),
       resolvers ++= Seq(
         "releases" at "http://server01:8080/archiva/repository/internal",
