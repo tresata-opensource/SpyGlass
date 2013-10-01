@@ -68,7 +68,7 @@ public class HBaseSalter {
 		  byte[] originalStartKey, byte[] originalStopKey, 
 		  byte[] regionStartKey, byte[] regionStopKey, 
 		  String prefixList) throws IOException {
-	LOG.info("".format("OSRT: (%s) OSTP: (%s) RSRT: (%s) RSTP: (%s) PRFX: (%s)",
+	LOG.debug("".format("OSRT: (%s) OSTP: (%s) RSRT: (%s) RSTP: (%s) PRFX: (%s)",
 			Bytes.toString(originalStartKey),
 			Bytes.toString(originalStopKey),
 			Bytes.toString(regionStartKey),
@@ -160,7 +160,7 @@ public class HBaseSalter {
   }
   
   private static byte[][] getAllKeysWithStartStop(byte[] originalKey, String prefixList, byte startPrefix, byte stopPrefix) {
-      LOG.info("".format("getAllKeysWithStartStop: OKEY (%s) PLIST (%s) PSRT (%s) PSTP (%s)",
+      LOG.debug("".format("getAllKeysWithStartStop: OKEY (%s) PLIST (%s) PSRT (%s) PSTP (%s)",
               Bytes.toString(originalKey), prefixList, startPrefix, stopPrefix));
 
       char[] prefixArray = prefixList.toCharArray();
@@ -171,11 +171,16 @@ public class HBaseSalter {
 	  }
 	  
 	  SortedSet<Byte> subSet = prefixSet.subSet(startPrefix, true, stopPrefix, true);
+
+      LOG.debug("".format("Prefix subset (%s)", subSet));
 	  
 	  return getAllKeys(originalKey, subSet.toArray(new Byte[]{}));
   }
   
   public static byte[][] getAllKeys(byte[] originalKey, Byte [] prefixArray) {
+    LOG.debug("".format("getAllKeys: OKEY (%s) PARRAY (%s)",
+              Bytes.toString(originalKey), prefixArray ));
+
 	byte[][] keys = new byte[prefixArray.length][];
 	
     for (byte i = 0; i < prefixArray.length; i++) {

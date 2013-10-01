@@ -17,13 +17,13 @@ import org.scalatest.{ FunSpec, BeforeAndAfterAll }
 
 class LoadJob(args: Args) extends Job(args) {
   Tsv("input", ('fruit, 'descr, 'comment))
-    .then((pipe: Pipe) => new HBasePipeWrapper(pipe).toBytesWritable(('fruit, 'descr, 'comment)))
+    .thenDo((pipe: Pipe) => new HBasePipeWrapper(pipe).toBytesWritable(('fruit, 'descr, 'comment)))
     .write(HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment")))
 }
 
 class ExtractJob(args: Args) extends Job(args) {
   HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment"))
-  .then((pipe: Pipe) => new HBasePipeWrapper(pipe).fromBytesWritable(('fruit, 'descr, 'comment)))
+  .thenDo((pipe: Pipe) => new HBasePipeWrapper(pipe).fromBytesWritable(('fruit, 'descr, 'comment)))
   .write( Tsv("output", ('fruit, 'descr, 'comment)))
 }
 
