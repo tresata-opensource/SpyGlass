@@ -9,28 +9,23 @@ object SpyglassBuild extends Build {
       organization := "parallelai",
       name := "spyglass",
       version := "0.1-tres-SNAPSHOT",
-      scalaVersion := "2.9.2",
+      scalaVersion := "2.9.3",
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
       libraryDependencies ++= Seq(
-        "com.twitter" %% "scalding-core" % "0.8.7-tres-SNAPSHOT" % "compile",
+        "com.twitter" %% "scalding-core" % "0.9.0-tres-SNAPSHOT" % "compile",
         "org.apache.hadoop" % "hadoop-core" % "1.0.4" % "provided",
         "org.apache.hbase" % "hbase" % "0.94.6" % "provided",
         "org.slf4j" % "slf4j-log4j12" % "1.6.6" % "provided",
         "com.novocode" % "junit-interface" % "0.8" % "test",
-        "org.scalatest" %% "scalatest" % "1.8" % "test",
+        "org.scalatest" %% "scalatest" % "1.9.2" % "test",
         "org.apache.hbase" % "hbase" % "0.94.6" % "test" classifier "tests",
         "com.google.guava" % "guava" % "13.0" % "test"
       ),
       resolvers ++= Seq( // necessary since scalding is not pusblished yet
         "releases" at "http://server01:8080/archiva/repository/internal",
         "snapshots"  at "http://server01:8080/archiva/repository/snapshots",
-        "proxy"  at "http://oss.sonatype.org/content/repositories/proxy"
-      ),
-      resolvers ++= Seq(
-        "releases" at "http://server01:8080/archiva/repository/internal",
-        "snapshots"  at "http://server01:8080/archiva/repository/snapshots",
-        "proxy"  at "http://oss.sonatype.org/content/repositories/proxy"
+        "proxy"  at "http://server01:8080/archiva/repository/proxy"
       ),
       publishMavenStyle := true,
       pomIncludeRepository := { x => false },
@@ -43,7 +38,8 @@ object SpyglassBuild extends Build {
           Some("tresata-releases"  at "http://server01:8080/archiva/repository/internal")
       },
       credentials += Credentials(Path.userHome / ".m2" / "credentials_internal"),
-      credentials += Credentials(Path.userHome / ".m2" / "credentials_snapshots")
+      credentials += Credentials(Path.userHome / ".m2" / "credentials_snapshots"),
+      credentials += Credentials(Path.userHome / ".m2" / "credentials_proxy")
     )
   )
 

@@ -1,16 +1,17 @@
 package parallelai.spyglass.hbase
 
 import java.io.IOException
+import scala.util.control.Exception.allCatch
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.util.Bytes
 import com.twitter.scalding.AccessMode
-import com.twitter.scalding.{ HadoopMode, HadoopTest }
+import com.twitter.scalding.{ HadoopMode, HadoopTest, TestTapFactory }
 import com.twitter.scalding.Mode
 import com.twitter.scalding.Read
 import com.twitter.scalding.Source
 import com.twitter.scalding.Write
 
-import parallelai.spyglass.hbase.HBaseConstants.SourceMode
+import parallelai.spyglass.hbase.HBaseConstants.{SplitType, SourceMode}
 import cascading.scheme.{NullScheme, Scheme}
 import cascading.tap.SinkMode
 import cascading.tap.Tap
@@ -39,15 +40,19 @@ case class HBaseSource(
     keyList: List[String] = null,
     versions: Int = 1,
     useSalt: Boolean = false,
-    prefixList: String = null
+    prefixList: String = null,
+    sinkMode: SinkMode = SinkMode.UPDATE,
+    inputSplitType: SplitType = SplitType.GRANULAR
   ) extends Source {
-    
-  override val hdfsScheme = new HBaseScheme(keyFields, timestamp, familyNames.toArray, valueFields.toArray)
-    .asInstanceOf[Scheme[JobConf, RecordReader[_, _], OutputCollector[_, _], _, _]]
+
+  val internalScheme = new HBaseScheme(keyFields, timestamp, familyNames.toArray, valueFields.toArray)
+  internalScheme.setInputSplitTye(inputSplitType)
+
+  def hdfsScheme = internalScheme.asInstanceOf[Scheme[JobConf, RecordReader[_, _], OutputCollector[_, _], _, _]]
 
   // To enable local mode testing
   val allFields = keyFields.append(valueFields.toArray)
-  override def localScheme = new NullScheme(allFields, allFields)
+  def localScheme = new NullScheme(allFields, allFields)
 
   override def createTap(readOrWrite: AccessMode)(implicit mode: Mode): Tap[_, _, _] = {
     val hBaseScheme = hdfsScheme match {
@@ -75,11 +80,13 @@ case class HBaseSource(
             }
             case _ => throw new IOException("Unknown Source Mode (%)".format(sourceMode))
           }
+
+          hbt.setInputSplitType(inputSplitType)
           
           hbt.asInstanceOf[Tap[_,_,_]]
         }
         case Write => {
-          val hbt = new HBaseTap(quorumNames, tableName, hBaseScheme, SinkMode.UPDATE)
+          val hbt = new HBaseTap(quorumNames, tableName, hBaseScheme, sinkMode)
           
           hbt.setUseSaltInSink(useSalt)
           if (mode.isInstanceOf[HadoopTest]) // hack to make JobTest work
@@ -88,7 +95,22 @@ case class HBaseSource(
           hbt.asInstanceOf[Tap[_,_,_]]
         }
       }
-      case _ => super.createTap(readOrWrite)(mode)
+      case _ => {
+        allCatch.opt(
+          TestTapFactory(this, hdfsScheme)
+        ).map {
+            _.createTap(readOrWrite) // these java types are invariant, so we cast here
+            .asInstanceOf[Tap[Any, Any, Any]]
+        }
+        .orElse {
+          allCatch.opt(
+            TestTapFactory(this, localScheme.getSourceFields)
+          ).map {
+            _.createTap(readOrWrite)
+            .asInstanceOf[Tap[Any, Any, Any]]
+          }
+        }.get
+      }
     }
   }
 }
