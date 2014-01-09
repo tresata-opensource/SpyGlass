@@ -2,12 +2,12 @@ package parallelai.spyglass.hbase;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
-abstract class HBaseOperation {
+public abstract class HBaseOperation {
     public enum OperationType {
         PUT_COLUMN, DELETE_COLUMN, DELETE_FAMILY, DELETE_ROW, NO_OP
     }
     
-    static class PutColumn extends HBaseOperation {
+    public static class PutColumn extends HBaseOperation {
         private final ImmutableBytesWritable value;
         
         public PutColumn(final ImmutableBytesWritable value) { 
@@ -20,19 +20,19 @@ abstract class HBaseOperation {
         }
     }
 
-    static class DeleteColumn extends HBaseOperation {
+    public static class DeleteColumn extends HBaseOperation {
         private DeleteColumn() {
             super(OperationType.DELETE_COLUMN);
         }
     }
 
-    static class DeleteFamily extends HBaseOperation {
+    public static class DeleteFamily extends HBaseOperation {
         private DeleteFamily() {
             super(OperationType.DELETE_FAMILY);
         }
     }
 
-    static class DeleteRow extends HBaseOperation {
+    public static class DeleteRow extends HBaseOperation {
         private DeleteRow() {
             super(OperationType.DELETE_ROW);
         }
@@ -44,10 +44,10 @@ abstract class HBaseOperation {
         }
     }
 
-    final static DeleteColumn DELETE_COLUMN = new DeleteColumn();
-    final static DeleteFamily DELETE_FAMILY = new DeleteFamily();
-    final static DeleteRow DELETE_ROW = new DeleteRow();
-    final static NoOp NO_OP = new NoOp();
+    public static final DeleteColumn DELETE_COLUMN = new DeleteColumn();
+    public static final DeleteFamily DELETE_FAMILY = new DeleteFamily();
+    public static final DeleteRow DELETE_ROW = new DeleteRow();
+    public static final NoOp NO_OP = new NoOp();
     
     private final OperationType operationType;
 
