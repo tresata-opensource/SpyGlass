@@ -8,7 +8,7 @@ object SpyglassBuild extends Build {
     settings = Project.defaultSettings ++ Seq(
       organization := "parallelai",
       name := "spyglass",
-      version := "0.1-SNAPSHOT",
+      version := "0.2-SNAPSHOT",
       scalaVersion := "2.9.3",
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
