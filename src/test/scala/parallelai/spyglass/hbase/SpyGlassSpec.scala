@@ -21,10 +21,17 @@ class LoadJob(args: Args) extends Job(args) {
     .write(HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment")))
 }
 
+class LoadOpsJob(args: Args) extends Job(args) {
+  Tsv("input", ('fruit, 'descr, 'comment))
+    .thenDo((pipe: Pipe) => new HBasePipeWrapper(pipe).toBytesWritable(('fruit)))
+    .thenDo((pipe: Pipe) => new HBasePipeWrapper(pipe).toHBaseOperation(('descr, 'comment)))
+    .write(HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment")))
+}
+
 class ExtractJob(args: Args) extends Job(args) {
   HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment"))
   .thenDo((pipe: Pipe) => new HBasePipeWrapper(pipe).fromBytesWritable(('fruit, 'descr, 'comment)))
-  .write( Tsv("output", ('fruit, 'descr, 'comment)))
+  .write(Tsv("output", ('fruit, 'descr, 'comment)))
 }
 
 object SpyGlassSpec {
@@ -80,14 +87,26 @@ class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
   val hbaseCluster = new MiniHBaseCluster(conf, 1)
   val htable = createTable(conf)
 
-  val testData = List(("apple", "granny smith", "from long island"), ("pear", "barlett", null.asInstanceOf[String]))
+  val testData = List(
+    ("apple", "granny smith", "from long island"),
+    ("pear", "barlett", null.asInstanceOf[String])
+  )
   val checkMap = Map(
     "apple" -> Map("descr" -> "granny smith", "comment" -> "from long island"),
     "pear" -> Map("descr" -> "barlett")
   )
+  val testDataOps = List(
+    ("apple", null.asInstanceOf[String], "__DELETE_COLUMN__"),
+    ("pear", "__DELETE_ROW__", null.asInstanceOf[String]),
+    ("orange", "valencia", "from italy")
+  )
+  val checkMapOps = Map(
+    "apple" -> Map("descr" -> "granny smith"),
+    "orange" -> Map("descr" -> "valencia", "comment" -> "from italy")
+  )
 
   describe("An HBaseSource") {
-    it("should be able to participate in a flow as a sink") {
+    it("should be able to participate in a flow as a source or sink") {
       truncTable(htable)
 
       JobTest("parallelai.spyglass.hbase.LoadJob")
@@ -95,7 +114,7 @@ class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
         .sink(HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment")))(noOp[(String, String, String)])
         .runHadoop
         .finish
-      assert(checkMap == tableToMaps(htable))
+      assert(checkMap === tableToMaps(htable))
 
       JobTest("parallelai.spyglass.hbase.ExtractJob")
         .source(HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment")), testData)
@@ -107,6 +126,13 @@ class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
         }}
         .runHadoop
         .finish
+
+      JobTest("parallelai.spyglass.hbase.LoadOpsJob")
+        .source(Tsv("input", ('fruit, 'descr, 'comment)), testDataOps)
+        .sink(HBaseSource("test", "localhost:2181", ('fruit), List("cf", "cf"), List("descr", "comment")))(noOp[(String, String, String)])
+        .runHadoop
+        .finish
+      assert(checkMapOps === tableToMaps(htable))
     }
   }
 
