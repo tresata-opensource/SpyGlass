@@ -285,6 +285,8 @@ public class HBaseScheme
           case DELETE_ROW:
             deleteRow = true;
             break;
+          case NO_OP:
+            break;
           }
         }
       }
