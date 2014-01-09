@@ -26,7 +26,7 @@ class HBasePipeWrapper (pipe: Pipe) {
             case "__DELETE_COLUMN__" => HBaseOperation.DELETE_COLUMN
             case "__DELETE_FAMILY__" => HBaseOperation.DELETE_FAMILY
             case "__DELETE_ROW__" => HBaseOperation.DELETE_ROW
-            case null => null
+            case null => HBaseOperation.NO_OP
             case x => new HBaseOperation.PutColumn(new ImmutableBytesWritable(Bytes.toBytes(x)))
           }}
         }}

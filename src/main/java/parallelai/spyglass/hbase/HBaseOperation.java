@@ -4,7 +4,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 abstract class HBaseOperation {
     public enum OperationType {
-        PUT_COLUMN, DELETE_COLUMN, DELETE_FAMILY, DELETE_ROW
+        PUT_COLUMN, DELETE_COLUMN, DELETE_FAMILY, DELETE_ROW, NO_OP
     }
     
     static class PutColumn extends HBaseOperation {
@@ -38,9 +38,16 @@ abstract class HBaseOperation {
         }
     }
 
+    static class NoOp extends HBaseOperation {
+        private NoOp() {
+            super(OperationType.NO_OP);
+        }
+    }
+
     final static DeleteColumn DELETE_COLUMN = new DeleteColumn();
     final static DeleteFamily DELETE_FAMILY = new DeleteFamily();
     final static DeleteRow DELETE_ROW = new DeleteRow();
+    final static NoOp NO_OP = new NoOp();
     
     private final OperationType operationType;
 
