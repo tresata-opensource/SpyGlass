@@ -36,7 +36,7 @@ public class HBaseRecordWriter
    */
   public HBaseRecordWriter(HTable table) {
     m_table = table;
-    deletesBufferSize = table.getConfiguration().getLong("spyglass.deletes.buffer", 1048576);
+    deletesBufferSize = table.getConfiguration().getLong("spyglass.deletes.buffer", 524288);
   }
 
   public void close(Reporter reporter)
