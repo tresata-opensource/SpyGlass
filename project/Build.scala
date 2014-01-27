@@ -8,12 +8,12 @@ object SpyglassBuild extends Build {
     settings = Project.defaultSettings ++ Seq(
       organization := "parallelai",
       name := "spyglass",
-      version := "0.2-tres-SNAPSHOT",
+      version := "0.2-tres",
       scalaVersion := "2.9.3",
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
       libraryDependencies ++= Seq(
-        "com.twitter" %% "scalding-core" % "0.9.0rc5-tres-SNAPSHOT" % "compile",
+        "com.twitter" %% "scalding-core" % "0.9.0rc5-tres" % "compile",
         "org.apache.hadoop" % "hadoop-core" % "1.0.4" % "provided",
         "org.apache.hbase" % "hbase" % "0.94.6" % "provided",
         "org.slf4j" % "slf4j-log4j12" % "1.6.6" % "provided",
