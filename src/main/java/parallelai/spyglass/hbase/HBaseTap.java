@@ -30,10 +30,14 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,9 +150,33 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
     return hBaseAdmin;
   }
+  
+  private void obtainToken(JobConf conf) {
+    if (User.isHBaseSecurityEnabled(HBaseConfiguration.create(conf))) {
+      String user = conf.getUser();
+      LOG.info("obtaining HBase token for: {}", user);
+      try {
+        UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+        Credentials credentials = conf.getCredentials();
+        for(Token t : currentUser.getTokens()) {
+          LOG.info("Token {} is available", t);
+          if ("HBASE_AUTH_TOKEN".equalsIgnoreCase(t.getKind().toString())) {
+            LOG.info("Token {} added to credentials", t);
+            credentials.addToken(t.getKind(), t);
+          }
+        }
+      } catch (IOException e) {
+        throw new RuntimeException("Unable to obtain HBase auth token for " + user, e);
+      }
+    } else {
+      LOG.info("HBase security is not enabled... not obtaining token");
+    }
+  }
 
   @Override
   public void sinkConfInit(FlowProcess<JobConf> process, JobConf conf) {
+    obtainToken(conf);
+
     if(quorumNames != null) {
       conf.set("hbase.zookeeper.quorum", quorumNames);
     }
@@ -247,6 +275,8 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
   @Override
   public void sourceConfInit(FlowProcess<JobConf> process, JobConf conf) {
+    obtainToken(conf);
+
     // a hack for MultiInputFormat to see that there is a child format
     FileInputFormat.setInputPaths( conf, getPath() );
 
