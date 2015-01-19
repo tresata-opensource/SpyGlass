@@ -1,19 +1,15 @@
 package parallelai.spyglass.hbase;
 
-import java.util.Map;
 import java.util.List;
 import java.util.LinkedList;
 import java.io.IOException;
 
 import cascading.tap.SinkMode;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.hbase.util.ClassSize;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 
@@ -48,7 +44,7 @@ public class HBaseRecordWriter
   }
 
   public void setSinkMode(SinkMode sinkMode) {
-    m_sinkMode = sinkMode;
+      m_sinkMode = sinkMode;
   }
 
   public void write(ImmutableBytesWritable key,
@@ -74,7 +70,7 @@ public class HBaseRecordWriter
   }
 
   private void doDelete(Delete delete) throws IOException {
-    currentDeletesBufferSize += heapSizeOfDelete(delete); // currentDeletesBufferSize += delete.heapSize();
+    currentDeletesBufferSize += delete.heapSize();
     deletesBuffer.add(new Delete((Delete) delete));
     while (currentDeletesBufferSize > deletesBufferSize) {
       flushDeletes();
@@ -87,45 +83,8 @@ public class HBaseRecordWriter
     } finally {
       currentDeletesBufferSize = 0;
       for (Delete delete: deletesBuffer) {
-        currentDeletesBufferSize += heapSizeOfDelete(delete); // currentDeletesBufferSize += delete.heapSize();
+        currentDeletesBufferSize += delete.heapSize();
       }
     }
-  }
-  
-  // this all goes away in newer hbase version where delete has a heapSize
-  private static long heapSizeOfDelete(Delete delete) {
-    long heapsize = ClassSize.align(
-      // This
-      ClassSize.OBJECT +
-      // row + OperationWithAttributes.attributes
-      2 * ClassSize.REFERENCE +
-      // Timestamp
-      1 * Bytes.SIZEOF_LONG +
-      // durability
-      ClassSize.REFERENCE +
-      // familyMap
-      ClassSize.REFERENCE +
-      // familyMap
-      ClassSize.TREEMAP);
-
-    // Adding row
-    heapsize += ClassSize.align(ClassSize.ARRAY + delete.getRow().length);
-
-    heapsize += ClassSize.align(delete.getFamilyMap().size() * ClassSize.MAP_ENTRY);
-    for(Map.Entry<byte [], List<KeyValue>> entry : delete.getFamilyMap().entrySet()) {
-      //Adding key overhead
-      heapsize += ClassSize.align(ClassSize.ARRAY + entry.getKey().length);
-
-      //This part is kinds tricky since the JVM can reuse references if you
-      //store the same value, but have a good match with SizeOf at the moment
-      //Adding value overhead
-      heapsize += ClassSize.align(ClassSize.ARRAYLIST);
-      int size = entry.getValue().size();
-      heapsize += ClassSize.align(ClassSize.ARRAY + size * ClassSize.REFERENCE);
-      for(KeyValue kv : entry.getValue()) {
-        heapsize += kv.heapSize();
-      }
-    }
-    return heapsize;
-  }
+  }  
 }

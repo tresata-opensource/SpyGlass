@@ -1,18 +1,14 @@
 package parallelai.spyglass.hbase
 
-import java.io.File
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Buffer
-import com.google.common.io.Files
 import cascading.pipe.Pipe
 import cascading.tuple.{ Tuple => CTuple, TupleEntry }
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.util.ToolRunner
 import org.apache.hadoop.hbase.util.Bytes
 import com.twitter.scalding.{ Job, Args, Tsv, JobTest }
-import org.apache.hadoop.hbase.zookeeper.MiniZooKeeperCluster
-import org.apache.hadoop.hbase.{ HBaseConfiguration, MiniHBaseCluster, HTableDescriptor, HColumnDescriptor, TableExistsException }
-import org.apache.hadoop.hbase.client.{ HBaseAdmin, HTable, Scan, Delete, Result }
+import org.apache.hadoop.hbase.{ HBaseConfiguration, HTableDescriptor, HColumnDescriptor, HBaseTestingUtility, TableName }
+import org.apache.hadoop.hbase.regionserver.BloomType
+import org.apache.hadoop.hbase.client.{ HBaseAdmin, HTableInterface, Scan, Delete, Result, HConnectionManager }
 import org.scalatest.{ FunSpec, BeforeAndAfterAll }
 
 class LoadJob(args: Args) extends Job(args) {
@@ -35,28 +31,13 @@ class ExtractJob(args: Args) extends Job(args) {
 }
 
 object SpyGlassSpec {
-  def createTable(conf: HBaseConfiguration, tableName: String = "test", family: String = "cf"): HTable = {
-    val desc = new HTableDescriptor(Bytes.toBytes(tableName))
-    desc.addFamily(new HColumnDescriptor(Bytes.toBytes(family)))
-    try {
-      new HBaseAdmin(conf).createTable(desc)
-    } catch {
-      case e: TableExistsException => Unit
-    }
-    new HTable(conf, tableName)
-  }
-
-  def truncTable(table: HTable) {
-    for(res <- table.getScanner(new Scan).asScala) table.delete(new Delete(res.getRow))
-  }
-
   def resultToMap(result: Result, family: String = "cf"): Map[String, String] =
     Map() ++ result.getFamilyMap(Bytes.toBytes(family)).asScala.iterator.map{ case (key, value) => (Bytes.toString(key), Bytes.toString(value)) }
 
   def resultsToMaps(results: Array[Result], family: String = "cf"): Map[String, Map[String, String]] =
     results.map{ result => (Bytes.toString(result.getRow), resultToMap(result, family)) }.toMap
 
-  def tableToMaps(table: HTable, family: String = "cf"): Map[String, Map[String, String]] =
+  def tableToMaps(table: HTableInterface, family: String = "cf"): Map[String, Map[String, String]] =
     resultsToMaps(table.getScanner(Bytes.toBytes(family)).next(10000))
 
   def teToMap(te: TupleEntry): Map[String, String] =
@@ -71,21 +52,44 @@ object SpyGlassSpec {
 class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
   import SpyGlassSpec._
   import com.twitter.scalding.Dsl._
-  
-  // cant get these loggers to shut up!
-  org.apache.log4j.Logger.getRootLogger.getAllAppenders.asScala.foreach(app => app match {
-    case appsk: org.apache.log4j.AppenderSkeleton => appsk.setThreshold(org.apache.log4j.Level.INFO)
-    case _ => Unit
-  })
-  
-  val conf = new HBaseConfiguration
-  val tmpDir = Files.createTempDir
-  val zkCluster = new MiniZooKeeperCluster
-  zkCluster.setDefaultClientPort(2181)
-  val clientPort = zkCluster.startup(tmpDir)
-  conf.set("hbase.zookeeper.property.clientPort", clientPort.toString)
-  val hbaseCluster = new MiniHBaseCluster(conf, 1)
-  val htable = createTable(conf)
+
+  val htu = HBaseTestingUtility.createLocalHTU
+  val conf = htu.getConfiguration
+  conf.set("test.hbase.zookeeper.property.clientPort", "2181")
+  htu.cleanupTestDir()
+  val zkMiniCluster = htu.startMiniZKCluster()
+  htu.startMiniHBaseCluster(1, 1)
+  val conn = HConnectionManager.createConnection(conf)
+  val admin = new HBaseAdmin(conf)
+
+  override def afterAll() {
+    conn.close()
+    admin.close()
+    htu.shutdownMiniHBaseCluster()
+    htu.shutdownMiniZKCluster()
+    htu.cleanupTestDir()
+  }
+
+  def createTable(tableName: String = "test", family: String = "cf"): HTableInterface = {
+    val desc = new HTableDescriptor(TableName.valueOf(tableName))
+    desc.addFamily(
+      new HColumnDescriptor(Bytes.toBytes(family))
+        .setBloomFilterType(BloomType.NONE)
+        .setMaxVersions(3)
+    )
+    if (admin.tableExists(tableName)) {
+      admin.disableTable("test")
+      admin.deleteTable("test")
+    } 
+    admin.createTable(desc)
+    conn.getTable(tableName)
+  }
+
+  def truncTable(table: HTableInterface) {
+    for(res <- table.getScanner(new Scan).asScala) table.delete(new Delete(res.getRow))
+  }
+
+  val htable = createTable()
 
   val testData = List(
     ("apple", "granny smith", "from long island"),
@@ -135,11 +139,4 @@ class SpyGlassSpec extends FunSpec with BeforeAndAfterAll {
       assert(checkMapOps === tableToMaps(htable))
     }
   }
-
-  override def afterAll(configMap: Map[String, Any]) {
-    hbaseCluster.shutdown
-    hbaseCluster.join
-  }
-
 }
-

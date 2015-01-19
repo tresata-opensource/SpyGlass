@@ -8,17 +8,14 @@ import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.RecordReader;
+import static org.apache.hadoop.hbase.mapreduce.TableRecordReaderImpl.LOG_PER_ROW_COUNT;
 
 import java.util.TreeSet;
 
 import static org.apache.hadoop.hbase.mapreduce.TableRecordReaderImpl.LOG_PER_ROW_COUNT;
 
 /**
- * Created with IntelliJ IDEA.
- * User: chand_000
- * Date: 29/08/13
- * Time: 15:42
- * To change this template use File | Settings | File Templates.
+ * Reading from HBase records logic & configuration
  */
 public abstract class HBaseRecordReaderBase implements
         RecordReader<ImmutableBytesWritable, Result> {
@@ -41,6 +38,7 @@ public abstract class HBaseRecordReaderBase implements
     protected boolean logScannerActivity = false;
     protected int logPerRowCount = 100;
     protected int noOfLogCount = 0;
+    protected long timestamp = -1;
 
     @Override
     public String toString() {
@@ -87,7 +85,6 @@ public abstract class HBaseRecordReaderBase implements
     }
 
     /**
-     *
      * @param endRow
      *          the last row in the split
      */
@@ -115,6 +112,8 @@ public abstract class HBaseRecordReaderBase implements
     public void setVersions(int versions) {
         this.versions = versions;
     }
+
+    public void setTimestamp(long timestamp) {this.timestamp = timestamp; }
 
     public void setUseSalt(boolean useSalt) {
         this.useSalt = useSalt;

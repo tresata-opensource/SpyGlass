@@ -6,11 +6,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
 
 /**
- * Created with IntelliJ IDEA.
- * User: chand_000
- * Date: 29/08/13
- * Time: 17:25
- * To change this template use File | Settings | File Templates.
+ * Utility class that sets the parameters of the record reader of a table split
  */
 public class HBaseConfigUtils {
     static final Log LOG = LogFactory.getLog(HBaseConfigUtils.class);
@@ -27,6 +23,7 @@ public class HBaseConfigUtils {
                 trr.setEndRow(tSplit.getEndRow());
                 trr.setEndRowInclusive(tSplit.getEndRowInclusive());
                 trr.setUseSalt(tSplit.getUseSalt());
+                trr.setTimestamp(tSplit.getTimestamp());
             }
 
             break;

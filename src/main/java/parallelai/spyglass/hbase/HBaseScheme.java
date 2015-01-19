@@ -31,7 +31,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
-//import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +55,7 @@ public class HBaseScheme
   
   /** Long timestamp */
   private long timeStamp;
+  private boolean useTimeStampInRead = false;
  
   /** String familyNames */
   private String[] familyNames;
@@ -114,6 +114,7 @@ public class HBaseScheme
     this.timeStamp = timeStamp;
     this.familyNames = familyNames;
     this.valueFields = valueFields;
+    this.useTimeStampInRead = (timeStamp > 0);
 
     setSourceSink(this.keyField, this.valueFields);
 
@@ -140,6 +141,7 @@ public class HBaseScheme
     this.keyField = keyField;
     this.valueFields = valueFields;
     this.timeStamp = System.currentTimeMillis();
+    this.useTimeStampInRead = false;
     
     validate();
 

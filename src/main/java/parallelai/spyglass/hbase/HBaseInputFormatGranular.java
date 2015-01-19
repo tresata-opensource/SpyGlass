@@ -1,53 +1,49 @@
 package parallelai.spyglass.hbase;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
-
-import javax.naming.NamingException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionLocation;
-import org.apache.hadoop.hbase.HServerAddress;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Addressing;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.hadoop.hbase.util.Strings;
-import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.net.DNS;
-import org.apache.hadoop.util.StringUtils;
-
 import parallelai.spyglass.hbase.HBaseConstants.SourceMode;
 
+import javax.naming.NamingException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * See HBaseInputFormatRegional first (!)
+ *
+ * Now that we know which splits we are interested reading from, we will proceed
+ * with iterating over the region servers & splits and depending on our Read strategy
+ * i.e. SCAN_RANGE, GET_LIST , SCAN_ALL we initiate <class>HBaseTableSplitGranular</class> per
+ * region and split with all the correct parameters.
+ *
+ * So all the different <u>strategies</u> are implemented here at a high level
+ *
+ */
 public class HBaseInputFormatGranular extends HBaseInputFormatBase {
 
 	private final Log LOG = LogFactory.getLog(HBaseInputFormatGranular.class);
 
-	// private String tableName = "";
-
 	private HashMap<InetAddress, String> reverseDNSCacheMap = new HashMap<InetAddress, String>();
 
 	private String nameServer = null;
-
-	// private Scan scan = null;
 
 	@SuppressWarnings("deprecation")
 	@Override
@@ -111,26 +107,26 @@ public class HBaseInputFormatGranular extends HBaseInputFormatBase {
 					: maxKey;
 
 			HRegionLocation regionLoc = table.getRegionLocation(keys.getFirst()[i]);
-            HServerAddress regionServerAddress = regionLoc.getServerAddress();
-			InetAddress regionAddress = regionServerAddress.getInetSocketAddress().getAddress();
-			String regionLocation;
-			try {
-				regionLocation = reverseDNS(regionAddress);
-			} catch (NamingException e) {
-				LOG.error("Cannot resolve the host name for " + regionAddress
-						+ " because of " + e);
-				regionLocation = regionServerAddress.getHostname();
-			}
+            //HServerAddress regionServerAddress = regionLoc.getServerAddress();
+//			InetAddress regionAddress = regionServerAddress.getInetSocketAddress().getAddress();
+//			String regionLocation;
+//			try {
+//				regionLocation = reverseDNS(regionAddress);
+//			} catch (NamingException e) {
+//				LOG.error("Cannot resolve the host name for " + regionAddress
+//						+ " because of " + e);
+//				regionLocation = regionLoc.getHostname();
+//			}
 
             regionNames[i] = regionLoc.getRegionInfo().getRegionNameAsString();
 
-			LOG.debug("***** " + regionLocation);
+			LOG.debug("***** " + regionLoc.getHostname());
 
-			if (regionLocation == null || regionLocation.length() == 0)
-				throw new IOException("The region info for regiosn " + i
+			if (regionLoc.getHostname() == null || regionLoc.getHostname().length() == 0)
+				throw new IOException("The region info for region " + i
 						+ " is null or empty");
 
-			regions[i] = regionLocation;
+			regions[i] = regionLoc.getHostname();
 
 			LOG.debug(String.format(
 					"Region (%s) has start key (%s) and stop key (%s)", regions[i],
@@ -190,19 +186,6 @@ public class HBaseInputFormatGranular extends HBaseInputFormatBase {
 						byte[] rStart = cRegion.getRegionInfo().getStartKey();
 						byte[] rStop = cRegion.getRegionInfo().getEndKey();
 
-						HServerAddress regionServerAddress = cRegion
-								.getServerAddress();
-						InetAddress regionAddress = regionServerAddress
-								.getInetSocketAddress().getAddress();
-						String regionLocation;
-						try {
-							regionLocation = reverseDNS(regionAddress);
-						} catch (NamingException e) {
-							LOG.error("Cannot resolve the host name for "
-									+ regionAddress + " because of " + e);
-							regionLocation = regionServerAddress.getHostname();
-						}
-
                         String regionName = cRegion.getRegionInfo().getRegionNameAsString();
 
                         byte[] sStart = (startRow == HConstants.EMPTY_START_ROW
@@ -220,7 +203,7 @@ public class HBaseInputFormatGranular extends HBaseInputFormatBase {
 										.compareTo(stopRow, rStop) >= 0)), rStop.length));
 
 						HBaseTableSplitGranular split = new HBaseTableSplitGranular(
-								table.getTableName(), sStart, sStop, regionLocation, regionName,
+								table.getTableName(), sStart, sStop, cRegion.getHostname(), regionName,
 								SourceMode.SCAN_RANGE, useSalt);
 
 						split.setEndRowInclusive(currentRegion == maxRegions);

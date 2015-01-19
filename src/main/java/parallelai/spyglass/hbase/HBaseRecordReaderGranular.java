@@ -1,47 +1,41 @@
 package parallelai.spyglass.hbase;
 
-import static org.apache.hadoop.hbase.mapreduce.TableRecordReaderImpl.LOG_PER_ROW_COUNT;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.util.Writables;
+import org.apache.hadoop.util.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.KeyValue;
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.client.ScannerCallable;
-import org.apache.hadoop.hbase.filter.Filter;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
-import org.apache.hadoop.hbase.util.Bytes; 
-import org.apache.hadoop.hbase.util.Writables;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.util.StringUtils;
-
-import org.jruby.javasupport.util.RuntimeHelpers;
-import parallelai.spyglass.hbase.HBaseConstants.SourceMode;
-
+/**
+ * It builds the scanner in method init() and ALL the logic is in method next()
+ * At the reader level - our Job is parallelised in multiple Map phases ;-)
+ */
 public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
 
   static final Log LOG = LogFactory.getLog(HBaseRecordReaderGranular.class);
 
   private byte[] lastSuccessfulRow;
   private ResultScanner scanner;
-  private long timestamp;
+  private long timestamp = -1;
   private int rowcount = 0;
+  private final int scanCaching = 1000;
 
-    @Override
-    public String toString() {
+  @Override
+  public String toString() {
         StringBuffer sbuf = new StringBuffer();
 
         sbuf.append("".format("HBaseRecordReaderRegional : startRow [%s] endRow [%s] lastRow [%s] nextKey [%s] endRowInc [%s] rowCount [%s]",
@@ -50,12 +44,9 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
                 sourceMode, useSalt, versions));
 
         return sbuf.toString();
-    }
+  }
 
-    private final int scanCaching = 1000;
-
-
-    /**
+  /**
    * Restart from survivable exceptions by creating a new scanner.
    * 
    * @param firstRow
@@ -72,6 +63,9 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
         scan.setFilter(trrRowFilter);
         scan.setCacheBlocks(true);
         scan.setCaching(scanCaching);
+        if(timestamp != -1) {
+            scan.setTimeStamp(timestamp);
+        }
         this.scanner = this.htable.getScanner(scan);
         currentScan = scan;
       } else {
@@ -82,6 +76,9 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
         TableInputFormat.addColumns(scan, trrInputColumns);
           scan.setCacheBlocks(true);
           scan.setCaching(scanCaching);
+          if(timestamp != -1) {
+              scan.setTimeStamp(timestamp);
+          }
         this.scanner = this.htable.getScanner(scan);
         currentScan = scan;
       }
@@ -93,7 +90,10 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
       TableInputFormat.addColumns(scan, trrInputColumns);
       scan.setFilter(trrRowFilter);
       scan.setCacheBlocks(true);
-        scan.setCaching(scanCaching);
+      scan.setCaching(scanCaching);
+      if(timestamp != -1) {
+        scan.setTimeStamp(timestamp);
+      }
       this.scanner = this.htable.getScanner(scan);
       currentScan = scan;
     }
@@ -251,7 +251,7 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
           }
           
           lastSuccessfulRow = key.get();
-          Writables.copyWritable(result, value);
+          value.copyFrom(result);
           return true;
         }
         return false;
@@ -302,7 +302,7 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
               key.set(result.getRow());
             }
             lastSuccessfulRow = key.get();
-            Writables.copyWritable(result, value);
+            value.copyFrom(result);
             
             return true;
           } else {
@@ -352,7 +352,7 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
             key.set(result.getRow());
           }
           lastSuccessfulRow = key.get();
-          Writables.copyWritable(result, value);
+          value.copyFrom(result);
 
           return true;
         } else {
@@ -408,7 +408,7 @@ public class HBaseRecordReaderGranular extends HBaseRecordReaderBase {
                 key.set(result.getRow());
               }
               lastSuccessfulRow = key.get();
-              Writables.copyWritable(result, value);
+              value.copyFrom(result);
               return true;
             } else {
               LOG.debug(String.format("+ Key (%s) return an EMPTY result. Get (%s)", Bytes.toString(nextKey), theGet.getId()) ); //alg0
