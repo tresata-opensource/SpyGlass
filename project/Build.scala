@@ -9,7 +9,7 @@ object SpyglassBuild extends Build {
     settings = Project.defaultSettings ++ graphSettings ++ Seq(
       organization := "parallelai",
       name := "spyglass",
-      version := "0.5.0-tres-SNAPSHOT",
+      version := "0.5.0-tres",
       scalaVersion := "2.10.4",
       crossScalaVersions := Seq("2.10.4", "2.11.5"),
       retrieveManaged := true,
