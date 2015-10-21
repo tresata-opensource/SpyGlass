@@ -11,11 +11,11 @@ object SpyglassBuild extends Build {
       name := "spyglass",
       version := "0.6.0-tres-SNAPSHOT",
       scalaVersion := "2.10.4",
-      crossScalaVersions := Seq("2.10.4", "2.11.5"),
+      crossScalaVersions := Seq("2.10.5", "2.11.7"),
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
       libraryDependencies ++= Seq(
-        "com.twitter" %% "scalding-core" % "0.13.1" % "compile",
+        "com.twitter" %% "scalding-core" % "0.15.1-RC13" % "compile",
         "org.apache.hadoop" % "hadoop-client" % "2.2.0" % "provided",
         //"org.apache.hbase" % "hbase-client" % "0.98.6-hadoop2" % "provided",
         "org.apache.hbase" % "hbase-common" % "0.98.6-hadoop2" % "provided",
