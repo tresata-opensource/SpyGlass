@@ -9,8 +9,8 @@ object SpyglassBuild extends Build {
     settings = Project.defaultSettings ++ graphSettings ++ Seq(
       organization := "parallelai",
       name := "spyglass",
-      version := "0.6.0-tres-SNAPSHOT",
-      scalaVersion := "2.10.4",
+      version := "0.6.0-tres",
+      scalaVersion := "2.10.5",
       crossScalaVersions := Seq("2.10.5", "2.11.7"),
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
@@ -37,9 +37,9 @@ object SpyglassBuild extends Build {
       publishArtifact in (Compile, packageDoc) := false,
       publishTo <<= version { (v: String) =>
         if (v.trim.endsWith("SNAPSHOT"))
-          Some("tresata-snapshots" at "http://server01:8080/archiva/repository/snapshots")
+          Some("tresata-snapshots" at "http://server02:8080/repository/snapshots")
         else
-          Some("tresata-releases"  at "http://server01:8080/archiva/repository/internal")
+          Some("tresata-releases"  at "http://server02:8080/repository/internal")
       },
       credentials += Credentials(Path.userHome / ".m2" / "credentials_internal"),
       credentials += Credentials(Path.userHome / ".m2" / "credentials_snapshots"),
