@@ -1,28 +1,28 @@
 import sbt._
 import sbt.Keys._
-import net.virtualvoid.sbt.graph.Plugin._
+import net.virtualvoid.sbt.graph.DependencyGraphPlugin
 
 object SpyglassBuild extends Build {
   lazy val project = Project(
     id = "root",
-    base = file("."),
-    settings = Project.defaultSettings ++ graphSettings ++ Seq(
+    base = file(".")
+  ).settings(
+    Seq(
       organization := "parallelai",
       name := "spyglass",
       version := "0.7.0-tres-SNAPSHOT",
-      scalaVersion := "2.10.5",
-      crossScalaVersions := Seq("2.10.5", "2.11.7"),
+      scalaVersion := "2.11.7",
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
       libraryDependencies ++= Seq(
-        "com.twitter" %% "scalding-core" % "0.15.1-RC13" % "compile",
-        "org.apache.hadoop" % "hadoop-client" % "2.2.0" % "provided",
+        "com.twitter" %% "scalding-core" % "0.16.0-RC3" % "compile",
+        "org.apache.hadoop" % "hadoop-client" % "2.6.0" % "provided",
         //"org.apache.hbase" % "hbase-client" % "0.98.6-hadoop2" % "provided",
         "org.apache.hbase" % "hbase-common" % "0.98.6-hadoop2" % "provided",
         "org.apache.hbase" % "hbase-server" % "0.98.6-hadoop2" % "provided",
         "org.slf4j" % "slf4j-log4j12" % "1.6.6" % "provided",
         "com.novocode" % "junit-interface" % "0.8" % "test",
-        "org.scalatest" %% "scalatest" % "2.2.2" % "test",
+        "org.scalatest" %% "scalatest" % "2.2.6" % "test",
         //"org.apache.hbase" % "hbase-client" % "0.98.6-hadoop2" % "test" classifier "tests",
         "org.apache.hbase" % "hbase-common" % "0.98.6-hadoop2" % "test" classifier "tests",
         "org.apache.hbase" % "hbase-server" % "0.98.6-hadoop2" % "test" classifier "tests",
@@ -46,5 +46,4 @@ object SpyglassBuild extends Build {
       credentials += Credentials(Path.userHome / ".m2" / "credentials_proxy")
     )
   )
-
 }
