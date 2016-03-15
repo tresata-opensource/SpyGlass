@@ -1,6 +1,5 @@
 import sbt._
 import sbt.Keys._
-import net.virtualvoid.sbt.graph.DependencyGraphPlugin
 
 object SpyglassBuild extends Build {
   lazy val project = Project(
