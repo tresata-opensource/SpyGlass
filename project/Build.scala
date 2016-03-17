@@ -14,7 +14,7 @@ object SpyglassBuild extends Build {
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
       libraryDependencies ++= Seq(
-        "com.twitter" %% "scalding-core" % "0.16.0-RC3" % "compile",
+        "com.twitter" %% "scalding-core" % "0.16.0-RC5" % "compile",
         "org.apache.hadoop" % "hadoop-client" % "2.6.0" % "provided",
         //"org.apache.hbase" % "hbase-client" % "0.98.6-hadoop2" % "provided",
         "org.apache.hbase" % "hbase-common" % "0.98.6-hadoop2" % "provided",
