@@ -171,6 +171,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
   @Override
   public void sinkConfInit(FlowProcess<JobConf> process, JobConf conf) {
     if(quorumNames != null) {
+      LOG.info("setting quorum to: {}", quorumNames);
       conf.set("hbase.zookeeper.quorum", quorumNames);
     }
 
@@ -274,6 +275,7 @@ public class HBaseTap extends Tap<JobConf, RecordReader, OutputCollector> {
     FileInputFormat.setInputPaths( conf, getPath() );
 
     if(quorumNames != null) {
+      LOG.info("setting quorum to: {}", quorumNames);
       conf.set("hbase.zookeeper.quorum", quorumNames);
     }
 

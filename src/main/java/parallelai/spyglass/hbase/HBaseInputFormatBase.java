@@ -2,6 +2,7 @@ package parallelai.spyglass.hbase;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
@@ -59,9 +60,11 @@ public abstract class HBaseInputFormatBase implements InputFormat<ImmutableBytes
             m_cols[i] = Bytes.toBytes(colNames[i]);
         }
         setInputColumns(m_cols);
-
+        Configuration hbaseConf = HBaseConfiguration.create(job);
+        LOG.info("creating table with job quorum: " + job.get("hbase.zookeeper.quorum"));
+        LOG.info("creating table with hbase configuration quorum: " +  hbaseConf.get("hbase.zookeeper.quorum"));
         try {
-            setHTable(new HTable(HBaseConfiguration.create(job), tableName));
+            setHTable(new HTable(hbaseConf, tableName));
         } catch (Exception e) {
             LOG.error("************* HBase table " + tableName + " is not accessible");
             LOG.error(StringUtils.stringifyException(e));

@@ -5,6 +5,7 @@ import java.io.IOException;
 import cascading.tap.SinkMode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
@@ -46,7 +47,10 @@ FileOutputFormat<ImmutableBytesWritable, Mutation> implements JobConfigurable {
     String tableName = job.get(OUTPUT_TABLE);
     HTable table = null;
     try {
-      table = new HTable(HBaseConfiguration.create(job), tableName);
+      Configuration hbaseConf = HBaseConfiguration.create(job);
+      LOG.info("creating table with job quorum: " + job.get("hbase.zookeeper.quorum"));
+      LOG.info("creating table with hbase configuration quorum: " + hbaseConf.get("hbase.zookeeper.quorum"));
+      table = new HTable(hbaseConf, tableName);
     } catch(IOException e) {
       LOG.error(e);
       throw e;
