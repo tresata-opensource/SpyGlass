@@ -9,7 +9,7 @@ object SpyglassBuild extends Build {
     Seq(
       organization := "parallelai",
       name := "spyglass",
-      version := "0.9.0-tres",
+      version := "1.0.0-tres-SNAPSHOT",
       scalaVersion := "2.11.7",
       retrieveManaged := true,
       retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
