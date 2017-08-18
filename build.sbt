@@ -26,8 +26,8 @@ lazy val root = (project in file(".")).settings(
   pomIncludeRepository := { x => false },
   publishArtifact in Test := false,
   publishArtifact in (Compile, packageDoc) := false,
-  publishTo <<= version { (v: String) =>
-    if (v.trim.endsWith("SNAPSHOT"))
+  publishTo := {
+    if (version.value.trim.endsWith("SNAPSHOT"))
       Some("tresata-snapshots" at "http://server02:8080/repository/snapshots")
     else
       Some("tresata-releases"  at "http://server02:8080/repository/internal")
