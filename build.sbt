@@ -1,7 +1,7 @@
 lazy val root = (project in file(".")).settings(
   organization := "parallelai",
   name := "spyglass",
-  version := "1.1.0-tres-SNAPSHOT",
+  version := "1.1.0-tres",
   scalaVersion := "2.11.8",
   retrieveManaged := true,
   retrievePattern := "[artifact](-[revision])(-[classifier]).[ext]",
