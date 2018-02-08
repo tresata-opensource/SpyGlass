@@ -22,17 +22,14 @@ lazy val root = (project in file(".")).settings(
     "org.apache.hbase" % "hbase-hadoop2-compat" % "1.2.0" % "test",
     "org.apache.hbase" % "hbase-hadoop2-compat" % "1.2.0" % "test" classifier "tests"
   ),
+  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
   publishMavenStyle := true,
   pomIncludeRepository := { x => false },
   publishArtifact in Test := false,
   publishArtifact in (Compile, packageDoc) := false,
-  publishTo := {
-    if (version.value.trim.endsWith("SNAPSHOT"))
-      Some("tresata-snapshots" at "http://server02:8080/repository/snapshots")
-    else
-      Some("tresata-releases"  at "http://server02:8080/repository/internal")
-  },
-  credentials += Credentials(Path.userHome / ".m2" / "credentials_internal"),
-  credentials += Credentials(Path.userHome / ".m2" / "credentials_snapshots"),
-  credentials += Credentials(Path.userHome / ".m2" / "credentials_proxy")
+  bintrayOrganization := Some("tresata"),
+  bintrayRepository := "maven",
+  bintrayVcsUrl := Some("git@github.com:tresata-opensource/SpyGlass.git"),
+  bintrayPackage := name.value,
+  bintrayReleaseOnPublish := false
 )
